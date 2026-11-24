@@ -1,0 +1,18 @@
+# Build artifacts
+build/
+*.apk
+*.dex
+*.ap_
+*.class
+
+# Signing keys (never commit keystores!)
+*.keystore
+*.jks
+
+# IDE & OS files
+.idea/
+.gradle/
+*.iml
+.DS_Store
+Thumbs.db
+local.properties
