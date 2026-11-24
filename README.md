@@ -56,7 +56,7 @@ Built with pure Android SDK (zero external dependencies, zero ads, zero telemetr
 pixel-lounge/
 ├── AndroidManifest.xml
 ├── build.sh                                  # One-command build, sign & ADB install script
-├── docs/screenshots/                         # Preview splashscreens
+├── docs/screenshots/                         # Live Android TV preview screenshots
 ├── res/
 │   ├── drawable/                             # Vector banner & UI icons
 │   └── values/styles.xml

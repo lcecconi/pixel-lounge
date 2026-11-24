@@ -101,6 +101,25 @@ public class MainActivity extends Activity {
         super.onResume();
         updateDateText();
         renderResumeBar();
+        handleThemeIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleThemeIntent(intent);
+    }
+
+    private void handleThemeIntent(Intent intent) {
+        if (intent == null) return;
+        int themeIdx = intent.getIntExtra("theme", intent.getIntExtra("capture_theme", -1));
+        if (themeIdx >= 0 && themeIdx < ThemeCatalog.THEMES.length) {
+            prefs.setThemeIndex(themeIdx);
+            applyTheme();
+            renderFavorites();
+            renderResumeBar();
+        }
     }
 
     @Override
