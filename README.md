@@ -24,7 +24,7 @@ Built with pure Android SDK (zero external dependencies, zero ads, zero telemetr
 
 ## Features
 
-* **Zero Bloat & Zero Ads:** ~52 KB native APK with no recommendations, no sponsored banners, and no tracking.
+* **Zero Bloat & Zero Ads:** ~104 KB native APK with bundled authentic 8-bit retro typography (*Press Start 2P* and *Silkscreen*), no external dependencies, no recommendations, and no tracking.
 * **Procedural 8-Bit Pixel-Art Engine:** Crisp nearest-neighbor `240×135` pixel canvas with ordered Bayer dithering, subtle toggleable CRT scanlines, and calm low-CPU animations (~4 FPS). Includes **9 curated themes**:
   * *Space Age 1969* — Ringed celestial orb, cratered lunar surface, Apollo retro rocket & orbiting beacon satellite
   * *8-Bit Digital Sunset* — Violet-to-gold twilight sky, striped retro sun, mountains & shimmering water
@@ -35,7 +35,8 @@ Built with pure Android SDK (zero external dependencies, zero ads, zero telemetr
   * *Synthwave Dusk*, *Amber Arcade*, and *Pixel Lagoon*
 * **Curated Right-Justified Layout:** Keeps the left half of the screen open for the pixel-art scene, with soft elliptical radial halos gently separating the trays from the background.
 * **Native "Resume Watching" Bar:** Displays your 3 most recent Android TV *Watch Next* titles (with poster artwork, progress bars, and 1-click resume).
-* **Theme-Integrated Side Drawers:** Slide-in right-edge panels for *All Apps*, *App Options*, *Customize*, and *Hidden Apps*, with strict D-pad focus trapping.
+* **8-Bit Retro Side Drawers & Submenus:** Fast D-pad navigation with dedicated submenus for *Themes*, *Display & CRT*, *Layout & Dock*, and *Hidden Apps*.
+* **Customizable Sizing:** Toggleable 3-stage *Font Size* (*Regular*, *Large*, *Small*) and *Icon Size* (*Compact*, *Tiny*, *Medium*).
 * **Live Continuous Reorder Mode:** Smoothly slide favorite apps left/right across the row with instant visual feedback.
 * **Full App Discovery:** Automatically discovers both native Leanback TV apps and sideloaded mobile apps.
 

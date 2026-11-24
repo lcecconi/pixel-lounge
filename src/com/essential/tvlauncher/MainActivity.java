@@ -54,6 +54,7 @@ public class MainActivity extends Activity {
     private RetroSunsetView sunsetView;
     private SoftHaloView trayHaloView;
     private TextView dateText;
+    private TextClock clockView;
     private LinearLayout centerStage;
     private LinearLayout favoritesRow;
     private TextView focusedAppCaption;
@@ -67,6 +68,41 @@ public class MainActivity extends Activity {
 
     private List<AppInfo> allInstalledApps = new ArrayList<>();
     private Map<String, AppInfo> appByPackage = new HashMap<>();
+
+    private Typeface pixelFont;
+    private Typeface pixelTitleFont;
+    private Runnable drawerBackAction = null;
+
+    private int getFontDeltaSp() {
+        int mode = prefs.getFontSizeMode();
+        if (mode == 1) return 2;   // Large
+        if (mode == 2) return -2;  // Small
+        return 0;                  // Regular
+    }
+
+    private int getTitleFontDeltaSp() {
+        int mode = prefs.getFontSizeMode();
+        if (mode == 1) return 3;   // Large
+        if (mode == 2) return -3;  // Small
+        return 0;                  // Regular
+    }
+
+    private void applyFontSize() {
+        if (dateText != null) {
+            dateText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10 + getFontDeltaSp());
+        }
+        if (focusedAppCaption != null) {
+            focusedAppCaption.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11 + getFontDeltaSp());
+        }
+        if (resumeHeader != null) {
+            resumeHeader.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9 + getTitleFontDeltaSp());
+        }
+        if (clockView != null) {
+            clockView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17 + getTitleFontDeltaSp());
+        }
+        renderFavorites();
+        renderResumeBar();
+    }
 
     // Interactive Reorder Mode state
     private String reorderingPackage = null;
@@ -83,6 +119,14 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = new PrefsManager(this);
+
+        try {
+            pixelFont = getResources().getFont(R.font.silkscreen);
+            pixelTitleFont = getResources().getFont(R.font.press_start_2p);
+        } catch (Exception e) {
+            pixelFont = Typeface.MONOSPACE;
+            pixelTitleFont = Typeface.MONOSPACE;
+        }
 
         buildRootUi();
         applyTheme();
@@ -120,6 +164,17 @@ public class MainActivity extends Activity {
             renderFavorites();
             renderResumeBar();
         }
+        if (intent.hasExtra("open_drawer")) {
+            String drawer = intent.getStringExtra("open_drawer");
+            intent.removeExtra("open_drawer");
+            if ("customize".equals(drawer)) {
+                openCustomizeSideDrawer();
+            } else if ("themes".equals(drawer)) {
+                openThemesSideDrawer();
+            } else if ("all_apps".equals(drawer)) {
+                openAllAppsSideDrawer();
+            }
+        }
     }
 
     @Override
@@ -137,6 +192,12 @@ public class MainActivity extends Activity {
             return;
         }
         if (sideOverlayScrim.getVisibility() == View.VISIBLE) {
+            if (drawerBackAction != null) {
+                Runnable act = drawerBackAction;
+                drawerBackAction = null;
+                act.run();
+                return;
+            }
             closeSideDrawer();
             return;
         }
@@ -174,12 +235,23 @@ public class MainActivity extends Activity {
         if (sideOverlayScrim.getVisibility() == View.VISIBLE && event.getAction() == KeyEvent.ACTION_DOWN) {
             int code = event.getKeyCode();
             if (code == KeyEvent.KEYCODE_BACK) {
-                closeSideDrawer();
+                if (drawerBackAction != null) {
+                    Runnable act = drawerBackAction;
+                    drawerBackAction = null;
+                    act.run();
+                } else {
+                    closeSideDrawer();
+                }
                 return true;
             }
             if (code == KeyEvent.KEYCODE_DPAD_LEFT && "single_col".equals(sideOverlayScrim.getTag())) {
-                // Pressing Left on a single-column right drawer smoothly closes it!
-                closeSideDrawer();
+                if (drawerBackAction != null) {
+                    Runnable act = drawerBackAction;
+                    drawerBackAction = null;
+                    act.run();
+                } else {
+                    closeSideDrawer();
+                }
                 return true;
             }
             if (code == KeyEvent.KEYCODE_DPAD_RIGHT && "single_col".equals(sideOverlayScrim.getTag())) {
@@ -271,9 +343,9 @@ public class MainActivity extends Activity {
         // Minimal focused app caption right-aligned beneath the favorites bar
         focusedAppCaption = new TextView(this);
         focusedAppCaption.setTextColor(0xFFFFFFFF);
-        focusedAppCaption.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-        focusedAppCaption.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        focusedAppCaption.setLetterSpacing(0.14f);
+        focusedAppCaption.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11 + getFontDeltaSp());
+        focusedAppCaption.setTypeface(pixelFont);
+        focusedAppCaption.setLetterSpacing(0.08f);
         focusedAppCaption.setShadowLayer(4f, 0f, 2f, 0xCC000000);
         focusedAppCaption.setGravity(Gravity.END);
         focusedAppCaption.setPadding(dp(44), 0, dp(44), 0);
@@ -305,9 +377,9 @@ public class MainActivity extends Activity {
         resumeHeader = new TextView(this);
         resumeHeader.setText("RESUME WATCHING");
         resumeHeader.setTextColor(0xA6FFF5E1);
-        resumeHeader.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
-        resumeHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        resumeHeader.setLetterSpacing(0.18f);
+        resumeHeader.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9 + getTitleFontDeltaSp());
+        resumeHeader.setTypeface(pixelTitleFont);
+        resumeHeader.setLetterSpacing(0.12f);
         resumeHeader.setShadowLayer(3f, 0f, 1f, 0xCC000000);
         resumeHeader.setGravity(Gravity.END);
         resumeHeader.setPadding(dp(44), 0, dp(44), dp(4));
@@ -367,9 +439,9 @@ public class MainActivity extends Activity {
         // Left: Minimal monospace date
         dateText = new TextView(this);
         dateText.setTextColor(0xD8FFF5E1);
-        dateText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-        dateText.setTypeface(Typeface.MONOSPACE, Typeface.NORMAL);
-        dateText.setLetterSpacing(0.12f);
+        dateText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10 + getFontDeltaSp());
+        dateText.setTypeface(pixelFont);
+        dateText.setLetterSpacing(0.08f);
         dateText.setShadowLayer(4f, 0f, 2f, 0xCC000000);
         updateDateText();
 
@@ -420,15 +492,15 @@ public class MainActivity extends Activity {
         bar.addView(settingsBtn);
 
         // Right: Crisp Monospace Digital Clock
-        TextClock clock = new TextClock(this);
-        clock.setFormat24Hour("HH:mm");
-        clock.setFormat12Hour("h:mm");
-        clock.setTextColor(0xFFFFF8E7);
-        clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 23);
-        clock.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        clock.setLetterSpacing(0.06f);
-        clock.setShadowLayer(6f, 0f, 2f, 0xCC000000);
-        bar.addView(clock);
+        clockView = new TextClock(this);
+        clockView.setFormat24Hour("HH:mm");
+        clockView.setFormat12Hour("h:mm");
+        clockView.setTextColor(0xFFFFF8E7);
+        clockView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17 + getTitleFontDeltaSp());
+        clockView.setTypeface(pixelTitleFont);
+        clockView.setLetterSpacing(0.06f);
+        clockView.setShadowLayer(6f, 0f, 2f, 0xCC000000);
+        bar.addView(clockView);
 
         return bar;
     }
@@ -693,8 +765,8 @@ public class MainActivity extends Activity {
         TextView title = new TextView(this);
         title.setText(item.title);
         title.setTextColor(0xFFF8FAFC);
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
-        title.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9 + getFontDeltaSp());
+        title.setTypeface(pixelFont);
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams tlp = new FrameLayout.LayoutParams(
@@ -918,8 +990,8 @@ public class MainActivity extends Activity {
             drawerTitle = new TextView(this);
             drawerTitle.setText(app.label);
             drawerTitle.setTextColor(0xB3E2E8F0);
-            drawerTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
-            drawerTitle.setTypeface(Typeface.MONOSPACE);
+            drawerTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9 + getFontDeltaSp());
+            drawerTitle.setTypeface(pixelFont);
             drawerTitle.setSingleLine(true);
             drawerTitle.setEllipsize(TextUtils.TruncateAt.END);
             drawerTitle.setGravity(Gravity.CENTER);
@@ -1074,6 +1146,7 @@ public class MainActivity extends Activity {
     }
 
     private void closeSideDrawer() {
+        drawerBackAction = null;
         sideOverlayScrim.setVisibility(View.GONE);
         sideOverlayScrim.removeAllViews();
         homeLayer.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
@@ -1095,75 +1168,92 @@ public class MainActivity extends Activity {
     private LinearLayout createSideDrawerContainer(String title, String subtitle) {
         ThemeCatalog.ThemeSpec theme = ThemeCatalog.get(prefs.getThemeIndex());
 
-        LinearLayout drawer = new LinearLayout(this);
-        drawer.setOrientation(LinearLayout.VERTICAL);
-        drawer.setClickable(true);
-        drawer.setClipChildren(false);
-        drawer.setClipToPadding(false);
-
-        // Theme-integrated vertical gradient matching the sunset's mountain & water palette!
-        GradientDrawable bg = new GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[] {
-                        withAlpha(theme.skyBands[0], 0xEE),
-                        withAlpha(theme.mountainFar, 0xEE),
-                        withAlpha(theme.waterBase, 0xF5)
-                }
-        );
-        drawer.setBackground(bg);
-
-        // Luminous 2dp accent border on left edge of the side drawer
         LinearLayout outerWrapper = new LinearLayout(this);
         outerWrapper.setOrientation(LinearLayout.HORIZONTAL);
         outerWrapper.setClickable(true);
         outerWrapper.setFocusable(false);
 
-        View leftAccentBar = new View(this);
-        leftAccentBar.setBackgroundColor(withAlpha(theme.accentColor, 0xCC));
-        leftAccentBar.setLayoutParams(new LinearLayout.LayoutParams(
-                dp(2), ViewGroup.LayoutParams.MATCH_PARENT
+        // Authentic 8-bit double frame on the left edge
+        LinearLayout leftBorderFrame = new LinearLayout(this);
+        leftBorderFrame.setOrientation(LinearLayout.HORIZONTAL);
+        leftBorderFrame.setLayoutParams(new LinearLayout.LayoutParams(
+                dp(6), ViewGroup.LayoutParams.MATCH_PARENT
         ));
-        outerWrapper.addView(leftAccentBar);
+
+        View outerBar = new View(this);
+        outerBar.setBackgroundColor(theme.accentColor);
+        outerBar.setLayoutParams(new LinearLayout.LayoutParams(dp(3), ViewGroup.LayoutParams.MATCH_PARENT));
+        leftBorderFrame.addView(outerBar);
+
+        View gap = new View(this);
+        gap.setBackgroundColor(0xFF000000);
+        gap.setLayoutParams(new LinearLayout.LayoutParams(dp(1), ViewGroup.LayoutParams.MATCH_PARENT));
+        leftBorderFrame.addView(gap);
+
+        View innerBar = new View(this);
+        innerBar.setBackgroundColor(withAlpha(theme.accentColor, 0x88));
+        innerBar.setLayoutParams(new LinearLayout.LayoutParams(dp(2), ViewGroup.LayoutParams.MATCH_PARENT));
+        leftBorderFrame.addView(innerBar);
+
+        outerWrapper.addView(leftBorderFrame);
 
         LinearLayout inner = new LinearLayout(this);
         inner.setOrientation(LinearLayout.VERTICAL);
-        inner.setPadding(dp(24), dp(32), dp(24), dp(24));
+        inner.setPadding(dp(22), dp(28), dp(22), dp(20));
         inner.setClipChildren(false);
         inner.setClipToPadding(false);
+
+        // Solid retro canvas matching the theme's waterBase palette
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(0);
+        bg.setColor(withAlpha(theme.waterBase, 0xF6));
+        bg.setStroke(dp(1), withAlpha(theme.mountainFar, 0x99));
         inner.setBackground(bg);
         inner.setLayoutParams(new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.MATCH_PARENT, 1f
         ));
 
+        // 8-bit Title
         TextView titleTv = new TextView(this);
         titleTv.setText(title.toUpperCase(Locale.getDefault()));
-        titleTv.setTextColor(0xFFFFF8E7);
-        titleTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-        titleTv.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        titleTv.setLetterSpacing(0.12f);
+        titleTv.setTextColor(theme.accentColor);
+        titleTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12 + getTitleFontDeltaSp());
+        titleTv.setTypeface(pixelTitleFont);
+        titleTv.setLetterSpacing(0.06f);
+        titleTv.setShadowLayer(3f, 0f, 1f, 0xFF000000);
         inner.addView(titleTv);
+
+        // Retro pixel accent divider bar
+        View div = new View(this);
+        div.setBackgroundColor(withAlpha(theme.accentColor, 0x77));
+        LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(2)
+        );
+        dlp.topMargin = dp(8);
+        dlp.bottomMargin = dp(6);
+        div.setLayoutParams(dlp);
+        inner.addView(div);
 
         if (subtitle != null && !subtitle.isEmpty()) {
             TextView subTv = new TextView(this);
             subTv.setText(subtitle);
-            subTv.setTextColor(0x99FFF5E1);
-            subTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
-            subTv.setTypeface(Typeface.MONOSPACE);
+            subTv.setTextColor(0xFFCBD5E1);
+            subTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9 + getFontDeltaSp());
+            subTv.setTypeface(pixelFont);
+            subTv.setLetterSpacing(0.04f);
             LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             );
-            slp.topMargin = dp(4);
-            slp.bottomMargin = dp(18);
+            slp.bottomMargin = dp(14);
             subTv.setLayoutParams(slp);
             inner.addView(subTv);
         } else {
             View sp = new View(this);
-            sp.setLayoutParams(new LinearLayout.LayoutParams(1, dp(16)));
+            sp.setLayoutParams(new LinearLayout.LayoutParams(1, dp(12)));
             inner.addView(sp);
         }
 
         outerWrapper.addView(inner);
-        // Tag inner content holder on outerWrapper so callers can append to it cleanly
         outerWrapper.setTag(inner);
         return outerWrapper;
     }
@@ -1172,25 +1262,27 @@ public class MainActivity extends Activity {
         return (LinearLayout) outerWrapper.getTag();
     }
 
-    private View createSideMenuButton(String text, final boolean isDestructive, View.OnClickListener listener) {
+    private View createSideMenuButton(final String text, final boolean isDestructive, View.OnClickListener listener) {
         final ThemeCatalog.ThemeSpec theme = ThemeCatalog.get(prefs.getThemeIndex());
         final TextView btn = new TextView(this);
         btn.setText(text);
-        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-        btn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        btn.setTextColor(isDestructive ? 0xFFFCA5A5 : 0xFFF1F5F9);
-        btn.setPadding(dp(14), dp(11), dp(14), dp(11));
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10 + getFontDeltaSp());
+        btn.setTypeface(pixelFont);
+        btn.setTextColor(isDestructive ? 0xFFFCA5A5 : 0xFFE2E8F0);
+        btn.setPadding(dp(14), dp(10), dp(14), dp(10));
         btn.setFocusable(true);
         btn.setClickable(true);
+        btn.setLetterSpacing(0.04f);
 
         final GradientDrawable normal = new GradientDrawable();
-        normal.setCornerRadius(dp(6));
-        normal.setColor(0x1AFFFFFF);
-        normal.setStroke(dp(1), 0x1AFFFFFF);
+        normal.setCornerRadius(0);
+        normal.setColor(0x33000000);
+        normal.setStroke(dp(1), withAlpha(theme.mountainFar, 0x88));
 
         final GradientDrawable focused = new GradientDrawable();
-        focused.setCornerRadius(dp(6));
+        focused.setCornerRadius(0);
         focused.setColor(theme.accentColor);
+        focused.setStroke(dp(2), 0xFFFFFFFF);
 
         btn.setBackground(normal);
 
@@ -1206,7 +1298,7 @@ public class MainActivity extends Activity {
             public void onFocusChange(View v, boolean hasFocus) {
                 focused.setColor(ThemeCatalog.get(prefs.getThemeIndex()).accentColor);
                 v.setBackground(hasFocus ? focused : normal);
-                btn.setTextColor(hasFocus ? 0xFF120821 : (isDestructive ? 0xFFFCA5A5 : 0xFFF1F5F9));
+                btn.setTextColor(hasFocus ? 0xFF05050A : (isDestructive ? 0xFFFCA5A5 : 0xFFE2E8F0));
             }
         });
         btn.setOnClickListener(listener);
@@ -1214,6 +1306,7 @@ public class MainActivity extends Activity {
     }
 
     private void openAllAppsSideDrawer() {
+        drawerBackAction = null;
         Set<String> hidden = prefs.getHiddenApps();
         List<AppInfo> visibleApps = new ArrayList<>();
         for (AppInfo app : allInstalledApps) {
@@ -1279,6 +1372,7 @@ public class MainActivity extends Activity {
     }
 
     private void openAppOptionsSideDrawer(final AppInfo app, final boolean fromHomeDock) {
+        drawerBackAction = null;
         LinearLayout outer = createSideDrawerContainer(app.label, "◀ Press Left or Back to close");
         LinearLayout inner = getDrawerInner(outer);
 
@@ -1347,7 +1441,57 @@ public class MainActivity extends Activity {
     }
 
     private void openCustomizeSideDrawer() {
+        drawerBackAction = null;
         LinearLayout outer = createSideDrawerContainer("CUSTOMIZE", "◀ Press Left or Back to close");
+        LinearLayout inner = getDrawerInner(outer);
+
+        int currentTheme = prefs.getThemeIndex();
+        ThemeCatalog.ThemeSpec spec = ThemeCatalog.get(currentTheme);
+
+        // 1. Dedicated Theme Selection Submenu!
+        inner.addView(createSideMenuButton("🎨  THEMES: " + spec.name.toUpperCase(Locale.US) + "  ▶", false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openThemesSideDrawer();
+            }
+        }));
+
+        // 2. Display Settings Submenu!
+        inner.addView(createSideMenuButton("📺  DISPLAY & CRT  ▶", false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openDisplaySettingsSideDrawer();
+            }
+        }));
+
+        // 3. Layout & Dock Submenu!
+        inner.addView(createSideMenuButton("📐  LAYOUT & DOCK  ▶", false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openLayoutSideDrawer();
+            }
+        }));
+
+        // 4. Hidden Apps Submenu!
+        Set<String> hidden = prefs.getHiddenApps();
+        inner.addView(createSideMenuButton("👁  HIDDEN APPS (" + hidden.size() + ")  ▶", false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openHiddenAppsSideDrawer();
+            }
+        }));
+
+        showSideDrawer(outer, 340, true);
+    }
+
+    private void openThemesSideDrawer() {
+        drawerBackAction = new Runnable() {
+            @Override
+            public void run() {
+                openCustomizeSideDrawer();
+            }
+        };
+        LinearLayout outer = createSideDrawerContainer("THEMES", "◀ Press Left or Back to return");
         LinearLayout inner = getDrawerInner(outer);
 
         ScrollView sv = new ScrollView(this);
@@ -1357,6 +1501,17 @@ public class MainActivity extends Activity {
         ));
         LinearLayout list = new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
+
+        list.addView(createSideMenuButton("◀  BACK TO CUSTOMIZE", false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openCustomizeSideDrawer();
+            }
+        }));
+
+        View sp = new View(this);
+        sp.setLayoutParams(new LinearLayout.LayoutParams(1, dp(6)));
+        list.addView(sp);
 
         int currentTheme = prefs.getThemeIndex();
         for (int i = 0; i < ThemeCatalog.THEMES.length; i++) {
@@ -1370,97 +1525,161 @@ public class MainActivity extends Activity {
                     applyTheme();
                     renderFavorites();
                     renderResumeBar();
-                    openCustomizeSideDrawer();
+                    openThemesSideDrawer();
                 }
             }));
         }
 
-        // Divider spacer
-        View sp = new View(this);
-        sp.setLayoutParams(new LinearLayout.LayoutParams(1, dp(10)));
-        list.addView(sp);
+        sv.addView(list);
+        inner.addView(sv);
 
-        int sizeMode = prefs.getIconSizeMode();
-        String sizeName = sizeMode == 1 ? "TINY" : (sizeMode == 2 ? "MEDIUM" : "COMPACT");
-        list.addView(createSideMenuButton("ICON SIZE: " + sizeName, false, new View.OnClickListener() {
+        showSideDrawer(outer, 340, true);
+    }
+
+    private void openDisplaySettingsSideDrawer() {
+        drawerBackAction = new Runnable() {
+            @Override
+            public void run() {
+                openCustomizeSideDrawer();
+            }
+        };
+        LinearLayout outer = createSideDrawerContainer("DISPLAY", "◀ Press Left or Back to return");
+        LinearLayout inner = getDrawerInner(outer);
+
+        inner.addView(createSideMenuButton("◀  BACK TO CUSTOMIZE", false, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                prefs.setIconSizeMode(prefs.getIconSizeMode() + 1);
-                renderFavorites();
                 openCustomizeSideDrawer();
             }
         }));
 
+        View sp = new View(this);
+        sp.setLayoutParams(new LinearLayout.LayoutParams(1, dp(6)));
+        inner.addView(sp);
+
+        final boolean animOn = prefs.isAnimateBg();
+        inner.addView(createSideMenuButton("PIXEL SHIMMER: " + (animOn ? "ON" : "OFF"), false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                prefs.setAnimateBg(!animOn);
+                applyTheme();
+                openDisplaySettingsSideDrawer();
+            }
+        }));
+
+        final boolean scanOn = prefs.isScanlines();
+        inner.addView(createSideMenuButton("CRT SCANLINES: " + (scanOn ? "ON" : "OFF"), false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                prefs.setScanlines(!scanOn);
+                applyTheme();
+                openDisplaySettingsSideDrawer();
+            }
+        }));
+
+        final boolean showLabels = prefs.isShowLabels();
+        inner.addView(createSideMenuButton("APP CAPTION: " + (showLabels ? "ON" : "OFF"), false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                prefs.setShowLabels(!showLabels);
+                if (!prefs.isShowLabels()) focusedAppCaption.setText("");
+                openDisplaySettingsSideDrawer();
+            }
+        }));
+
+        showSideDrawer(outer, 340, true);
+    }
+
+    private void openLayoutSideDrawer() {
+        drawerBackAction = new Runnable() {
+            @Override
+            public void run() {
+                openCustomizeSideDrawer();
+            }
+        };
+        LinearLayout outer = createSideDrawerContainer("LAYOUT", "◀ Press Left or Back to return");
+        LinearLayout inner = getDrawerInner(outer);
+
+        inner.addView(createSideMenuButton("◀  BACK TO CUSTOMIZE", false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openCustomizeSideDrawer();
+            }
+        }));
+
+        View sp = new View(this);
+        sp.setLayoutParams(new LinearLayout.LayoutParams(1, dp(6)));
+        inner.addView(sp);
+
+        int sizeMode = prefs.getIconSizeMode();
+        String sizeName = sizeMode == 1 ? "TINY" : (sizeMode == 2 ? "MEDIUM" : "COMPACT");
+        inner.addView(createSideMenuButton("ICON SIZE: " + sizeName, false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                prefs.setIconSizeMode(prefs.getIconSizeMode() + 1);
+                renderFavorites();
+                openLayoutSideDrawer();
+            }
+        }));
+
+        int fontMode = prefs.getFontSizeMode();
+        String fontName = fontMode == 1 ? "LARGE" : (fontMode == 2 ? "SMALL" : "REGULAR");
+        inner.addView(createSideMenuButton("FONT SIZE: " + fontName, false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                prefs.setFontSizeMode(prefs.getFontSizeMode() + 1);
+                applyFontSize();
+                openLayoutSideDrawer();
+            }
+        }));
+
         final boolean showResume = prefs.isShowResumeBar();
-        list.addView(createSideMenuButton("RESUME BAR: " + (showResume ? "ON" : "OFF"), false, new View.OnClickListener() {
+        inner.addView(createSideMenuButton("RESUME BAR: " + (showResume ? "ON" : "OFF"), false, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 prefs.setShowResumeBar(!showResume);
                 trayHaloView.setShowBottomHalo(!showResume);
                 renderResumeBar();
-                openCustomizeSideDrawer();
+                openLayoutSideDrawer();
             }
         }));
 
-        final boolean animOn = prefs.isAnimateBg();
-        list.addView(createSideMenuButton("PIXEL SHIMMER: " + (animOn ? "ON" : "OFF"), false, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                prefs.setAnimateBg(!animOn);
-                applyTheme();
-                openCustomizeSideDrawer();
-            }
-        }));
-
-        final boolean scanOn = prefs.isScanlines();
-        list.addView(createSideMenuButton("CRT SCANLINES: " + (scanOn ? "ON" : "OFF"), false, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                prefs.setScanlines(!scanOn);
-                applyTheme();
-                openCustomizeSideDrawer();
-            }
-        }));
-
-        final boolean showLabels = prefs.isShowLabels();
-        list.addView(createSideMenuButton("APP CAPTION: " + (showLabels ? "ON" : "OFF"), false, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                prefs.setShowLabels(!showLabels);
-                if (!prefs.isShowLabels()) focusedAppCaption.setText("");
-                openCustomizeSideDrawer();
-            }
-        }));
-
-        Set<String> hidden = prefs.getHiddenApps();
-        list.addView(createSideMenuButton("HIDDEN APPS (" + hidden.size() + ")", false, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openHiddenAppsSideDrawer();
-            }
-        }));
-
-        sv.addView(list);
-        inner.addView(sv);
-
-        showSideDrawer(outer, 330, true);
+        showSideDrawer(outer, 340, true);
     }
 
     private void openHiddenAppsSideDrawer() {
+        drawerBackAction = new Runnable() {
+            @Override
+            public void run() {
+                openCustomizeSideDrawer();
+            }
+        };
         Set<String> hidden = prefs.getHiddenApps();
-        LinearLayout outer = createSideDrawerContainer("HIDDEN APPS", "Select an app to restore it");
+        LinearLayout outer = createSideDrawerContainer("HIDDEN APPS", "◀ Press Left or Back to return");
         LinearLayout inner = getDrawerInner(outer);
+
+        inner.addView(createSideMenuButton("◀  BACK TO CUSTOMIZE", false, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openCustomizeSideDrawer();
+            }
+        }));
+
+        View sp = new View(this);
+        sp.setLayoutParams(new LinearLayout.LayoutParams(1, dp(6)));
+        inner.addView(sp);
 
         if (hidden.isEmpty()) {
             TextView empty = new TextView(this);
             empty.setText("No hidden apps.");
             empty.setTextColor(0x99FFF5E1);
-            empty.setTypeface(Typeface.MONOSPACE);
-            empty.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            empty.setTypeface(pixelFont);
+            empty.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
             empty.setPadding(0, dp(8), 0, dp(16));
             inner.addView(empty);
         } else {
             ScrollView sv = new ScrollView(this);
+            sv.setVerticalScrollBarEnabled(false);
             sv.setLayoutParams(new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
             ));
@@ -1484,14 +1703,7 @@ public class MainActivity extends Activity {
             inner.addView(sv);
         }
 
-        inner.addView(createSideMenuButton("◀  BACK", false, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openCustomizeSideDrawer();
-            }
-        }));
-
-        showSideDrawer(outer, 330, true);
+        showSideDrawer(outer, 340, true);
     }
 
     private int withAlpha(int color, int alpha) {

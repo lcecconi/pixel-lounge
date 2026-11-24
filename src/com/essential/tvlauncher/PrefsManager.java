@@ -20,6 +20,7 @@ public class PrefsManager {
     private static final String KEY_SCANLINES = "scanlines";
     private static final String KEY_SHOW_RESUME = "show_resume_bar";
     private static final String KEY_ICON_SIZE = "icon_size_mode"; // 0=Compact, 1=Tiny, 2=Medium
+    private static final String KEY_FONT_SIZE = "font_size_mode"; // 0=Regular, 1=Large, 2=Small
 
     private final SharedPreferences prefs;
 
@@ -151,7 +152,15 @@ public class PrefsManager {
     }
 
     public void setIconSizeMode(int mode) {
-        prefs.edit().putInt(KEY_ICON_SIZE, mode % 3).apply();
+        prefs.edit().putInt(KEY_ICON_SIZE, (mode % 3 + 3) % 3).apply();
+    }
+
+    public int getFontSizeMode() {
+        return prefs.getInt(KEY_FONT_SIZE, 0);
+    }
+
+    public void setFontSizeMode(int mode) {
+        prefs.edit().putInt(KEY_FONT_SIZE, (mode % 3 + 3) % 3).apply();
     }
 
     private List<String> parseCsv(String raw) {
