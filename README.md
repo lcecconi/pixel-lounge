@@ -17,12 +17,16 @@ Built with pure Android SDK (zero external dependencies, zero ads, zero telemetr
 ### Neo Tokyo 1988
 ![Neo Tokyo 1988](docs/screenshots/neo-tokyo.png)
 
+### Space Age 1969
+![Space Age 1969](docs/screenshots/space-age.png)
+
 ---
 
 ## Features
 
-* **Zero Bloat & Zero Ads:** ~48 KB native APK with no recommendations, no sponsored banners, and no tracking.
-* **Procedural 8-Bit Pixel-Art Engine:** Crisp nearest-neighbor `240×135` pixel canvas with ordered Bayer dithering, subtle toggleable CRT scanlines, and calm low-CPU animations (~4 FPS). Includes **8 curated themes**:
+* **Zero Bloat & Zero Ads:** ~52 KB native APK with no recommendations, no sponsored banners, and no tracking.
+* **Procedural 8-Bit Pixel-Art Engine:** Crisp nearest-neighbor `240×135` pixel canvas with ordered Bayer dithering, subtle toggleable CRT scanlines, and calm low-CPU animations (~4 FPS). Includes **9 curated themes**:
+  * *Space Age 1969* — Ringed celestial orb, cratered lunar surface, Apollo retro rocket & orbiting beacon satellite
   * *8-Bit Digital Sunset* — Violet-to-gold twilight sky, striped retro sun, mountains & shimmering water
   * *Monkey Island Night* — LucasArts-inspired Lookout Point cliff, palm tree, flickering campfire, anchored pirate ship, giant moon & distant village lights
   * *Mêlée Island Sunset* — Lookout Point bathed in Caribbean twilight

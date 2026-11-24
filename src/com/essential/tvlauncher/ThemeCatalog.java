@@ -6,6 +6,7 @@ public class ThemeCatalog {
     public static final int SCENE_MONKEY_ISLAND = 1;
     public static final int SCENE_CYBER_CITY = 2;
     public static final int SCENE_FOREST_NIGHT = 3;
+    public static final int SCENE_SPACE_AGE = 4;
 
     public static class ThemeSpec {
         public final String name;
@@ -140,6 +141,19 @@ public class ThemeCatalog {
                     0xFFFF8F85,
                     0xFF5EEAD4,
                     0xFFE0F7FA
+            ),
+            // 8: Space Age 1969 (Apollo Moonscape & Ringed Cosmos)
+            new ThemeSpec(
+                    "Space Age 1969",
+                    SCENE_SPACE_AGE,
+                    new int[] { 0xFF01040A, 0xFF050916, 0xFF0B1026, 0xFF141438, 0xFF20164A, 0xFF321A58 },
+                    new int[] { 0xFFFFFFFF, 0xFF7DD3FC, 0xFF0284C7, 0xFF0F172A },
+                    0xFF1E2638,
+                    0xFF111724,
+                    0xFF0A0E18,
+                    0xFF38BDF8,
+                    0xFF38BDF8,
+                    0xFFF0F9FF
             )
     };
 

@@ -208,6 +208,9 @@ public class RetroSunsetView extends View {
             case ThemeCatalog.SCENE_FOREST_NIGHT:
                 buildForestNightScene();
                 break;
+            case ThemeCatalog.SCENE_SPACE_AGE:
+                buildSpaceAgeScene();
+                break;
             case ThemeCatalog.SCENE_SUNSET:
             default:
                 buildDigitalSunsetScene();
@@ -460,6 +463,152 @@ public class RetroSunsetView extends View {
         }
     }
 
+    // ==================== 5. SPACE AGE 1969 ====================
+
+    private void buildSpaceAgeScene() {
+        int horizon = 88;
+        drawDitheredSky(horizon);
+
+        // 1. Ringed Celestial Orb (Saturn-like gas giant: cx=72, cy=38, R=18)
+        int pcx = 72;
+        int pcy = 38;
+        int pr = 18;
+
+        // Back half of planetary rings (behind sphere)
+        drawSaturnRings(pcx, pcy, true);
+
+        // Planet sphere with spherical lighting / atmospheric crescent
+        for (int y = pcy - pr; y <= pcy + pr; y++) {
+            for (int x = pcx - pr; x <= pcx + pr; x++) {
+                int dx = x - pcx;
+                int dy = y - pcy;
+                int d2 = dx * dx + dy * dy;
+                if (d2 <= pr * pr) {
+                    float lightDist = (float) Math.sqrt((dx + 7) * (dx + 7) + (dy + 7) * (dy + 7));
+                    int col;
+                    if (lightDist < 9f) {
+                        col = theme.sunColors[0];
+                    } else if (lightDist < 17f) {
+                        col = theme.sunColors[1];
+                    } else if (lightDist < 26f) {
+                        col = theme.sunColors[2];
+                    } else {
+                        col = theme.sunColors[3];
+                    }
+                    if (((y + 100) % 4 == 0) && lightDist >= 9f && lightDist < 26f) {
+                        col = theme.sunColors[1];
+                    }
+                    putPx(staticPixels, x, y, col);
+                }
+            }
+        }
+
+        // Front half of planetary rings (across front of sphere)
+        drawSaturnRings(pcx, pcy, false);
+
+        // 2. Far rolling lunar mountain ridge
+        for (int x = 0; x < PIXEL_W; x++) {
+            double h = 4 + Math.sin(x * 0.042) * 5.5 + Math.cos(x * 0.095 + 1.1) * 3.0;
+            if (x > 130 && x < 190) h += 4.0;
+            int peakY = horizon - Math.max(1, (int) h);
+            for (int y = peakY; y < horizon; y++) {
+                putPx(staticPixels, x, y, theme.mountainFar);
+            }
+        }
+
+        // 3. Near cratered lunar surface
+        for (int y = horizon; y < PIXEL_H; y++) {
+            float depth = (float) (y - horizon) / (PIXEL_H - horizon);
+            for (int x = 0; x < PIXEL_W; x++) {
+                int base = (depth < 0.28f && (BAYER_4X4[y & 3][x & 3] > depth * 55f))
+                        ? theme.mountainNear
+                        : theme.waterBase;
+                staticPixels[y * PIXEL_W + x] = base;
+            }
+        }
+
+        // 4. Lunar Craters
+        drawLunarCrater(110, 96, 14, 5);
+        drawLunarCrater(175, 108, 20, 7);
+        drawLunarCrater(60, 114, 16, 6);
+        drawLunarCrater(142, 122, 10, 4);
+
+        // 5. Retro Space-Age Rocket on lunar ridge
+        drawRetroRocket(32, 86);
+    }
+
+    private void drawSaturnRings(int cx, int cy, boolean isBack) {
+        float cos = 0.94f;
+        float sin = -0.34f;
+        for (int y = cy - 14; y <= cy + 14; y++) {
+            for (int x = cx - 44; x <= cx + 44; x++) {
+                int dx = x - cx;
+                int dy = y - cy;
+                float rx = dx * cos - dy * sin;
+                float ry = dx * sin + dy * cos;
+                if (isBack && ry >= 0) continue;
+                if (!isBack && ry < 0) continue;
+
+                float ell = (rx * rx) / (38f * 38f) + (ry * ry) / (10f * 10f);
+                if (ell >= 0.58f && ell <= 1.05f) {
+                    if (ell >= 0.78f && ell <= 0.83f) continue;
+                    int ringCol = (ell < 0.78f) ? 0xFFCBD5E1 : 0xFF94A3B8;
+                    if (ell < 0.65f) ringCol = 0xFFF1F5F9;
+                    putPx(staticPixels, x, y, ringCol);
+                }
+            }
+        }
+    }
+
+    private void drawLunarCrater(int cx, int cy, int rw, int rh) {
+        for (int y = cy - rh; y <= cy + rh; y++) {
+            for (int x = cx - rw; x <= cx + rw; x++) {
+                int dx = x - cx;
+                int dy = y - cy;
+                float d = (float) (dx * dx) / (rw * rw) + (float) (dy * dy) / (rh * rh);
+                if (d <= 1.0f) {
+                    if (d > 0.70f) {
+                        int rimCol = (dx - dy < 0) ? theme.mountainFar : theme.waterBase;
+                        if (dx - dy < -3) rimCol = theme.waterHighlight;
+                        putPx(staticPixels, x, y, rimCol);
+                    } else {
+                        putPx(staticPixels, x, y, 0xFF060912);
+                    }
+                }
+            }
+        }
+    }
+
+    private void drawRetroRocket(int rx, int ry) {
+        // Needle antenna
+        putPx(staticPixels, rx, ry - 27, 0xFFFFFFFF);
+        putPx(staticPixels, rx, ry - 26, 0xFFFFFFFF);
+        // Nosecone
+        putPx(staticPixels, rx, ry - 25, 0xFFEF4444);
+        fillRect(staticPixels, rx - 1, ry - 24, 3, 2, 0xFFEF4444);
+        fillRect(staticPixels, rx - 2, ry - 22, 5, 3, 0xFFE2E8F0);
+        // Rocket Body
+        fillRect(staticPixels, rx - 3, ry - 19, 7, 13, 0xFFF8FAFC);
+        // Porthole window
+        fillRect(staticPixels, rx - 1, ry - 16, 3, 3, 0xFF1E293B);
+        putPx(staticPixels, rx, ry - 15, 0xFFFFD166);
+        // Lower booster section
+        fillRect(staticPixels, rx - 3, ry - 6, 7, 2, 0xFFEF4444);
+        fillRect(staticPixels, rx - 2, ry - 4, 5, 2, 0xFF64748B);
+        // Swept atomic fins
+        for (int i = 0; i < 9; i++) {
+            putPx(staticPixels, rx - 4 - (i * 4 / 9), ry - 9 + i, 0xFFEF4444);
+            putPx(staticPixels, rx + 4 + (i * 4 / 9), ry - 9 + i, 0xFFEF4444);
+        }
+        fillRect(staticPixels, rx - 8, ry, 3, 1, 0xFF64748B);
+        fillRect(staticPixels, rx + 6, ry, 3, 1, 0xFF64748B);
+        fillRect(staticPixels, rx - 1, ry - 2, 3, 2, 0xFF334155);
+        // Apollo mission flagpole planted on the ridge
+        fillRect(staticPixels, rx + 14, ry - 11, 1, 12, 0xFFCBD5E1);
+        fillRect(staticPixels, rx + 15, ry - 11, 5, 4, 0xFFEF4444);
+        fillRect(staticPixels, rx + 15, ry - 9, 5, 2, 0xFFFFFFFF);
+    }
+
     // ==================== ANIMATION PASS ====================
 
     private void renderAnimatedFrame() {
@@ -513,6 +662,31 @@ public class RetroSunsetView extends View {
                     int fx = fireflies[i][0] + (int) Math.round(Math.sin((animTick + i) * 0.5) * 3.0);
                     int fy = fireflies[i][1] + (int) Math.round(Math.cos((animTick + i) * 0.4) * 2.0);
                     putPx(framePixels, fx, fy, (phase < 5) ? 0xFFBEF264 : 0xFF4ADE80);
+                }
+            }
+        } else if (theme.sceneType == ThemeCatalog.SCENE_SPACE_AGE) {
+            // Orbital satellite drifting slowly across upper cosmos (left to right)
+            int satX = (animTick * 2) % (PIXEL_W + 50) - 25;
+            int satY = 14 + (int) Math.round(Math.sin(satX * 0.035) * 5.0);
+            if (satX >= -10 && satX < PIXEL_W + 10) {
+                // Spherical satellite body
+                fillRect(framePixels, satX - 1, satY - 1, 3, 3, 0xFFE2E8F0);
+                putPx(framePixels, satX, satY, 0xFFFFFFFF);
+                // 4 angled retro whip antennas
+                putPx(framePixels, satX - 3, satY - 3, 0xFF94A3B8);
+                putPx(framePixels, satX - 2, satY - 2, 0xFFCBD5E1);
+                putPx(framePixels, satX + 3, satY - 3, 0xFF94A3B8);
+                putPx(framePixels, satX + 2, satY - 2, 0xFFCBD5E1);
+                putPx(framePixels, satX - 3, satY + 3, 0xFF94A3B8);
+                putPx(framePixels, satX - 2, satY + 2, 0xFFCBD5E1);
+                putPx(framePixels, satX + 3, satY + 3, 0xFF94A3B8);
+                putPx(framePixels, satX + 2, satY + 2, 0xFFCBD5E1);
+                // Blinking telemetry beacon light on satellite
+                int beaconPhase = animTick % 6;
+                int beaconCol = (beaconPhase == 0) ? 0xFFFF2222
+                        : ((beaconPhase == 1) ? 0xFF38BDF8 : 0x00000000);
+                if (beaconCol != 0) {
+                    putPx(framePixels, satX, satY - 2, beaconCol);
                 }
             }
         }
