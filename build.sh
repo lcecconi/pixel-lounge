@@ -4,8 +4,15 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$PROJECT_DIR/build"
 ANDROID_HOME="${ANDROID_HOME:-$HOME/.local/share/android-sdk}"
-BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
-PLATFORM_JAR="$ANDROID_HOME/platforms/android-34/android.jar"
+BUILD_TOOLS="${BUILD_TOOLS:-$(ls -d "$ANDROID_HOME/build-tools/"* 2>/dev/null | sort -V | tail -n1)}"
+PLATFORM_JAR="${PLATFORM_JAR:-$(ls -d "$ANDROID_HOME/platforms/android-"*"/android.jar" 2>/dev/null | sort -V | tail -n1)}"
+
+if [ -z "$BUILD_TOOLS" ] || [ ! -d "$BUILD_TOOLS" ]; then
+  BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
+fi
+if [ -z "$PLATFORM_JAR" ] || [ ! -f "$PLATFORM_JAR" ]; then
+  PLATFORM_JAR="$ANDROID_HOME/platforms/android-34/android.jar"
+fi
 
 if command -v mise >/dev/null 2>&1; then
   JAVA_HOME="${JAVA_HOME:-$(mise where java@temurin-17.0.21.1+2 2>/dev/null || mise where java 2>/dev/null || true)}"

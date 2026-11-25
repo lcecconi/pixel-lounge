@@ -1,6 +1,9 @@
 # Pixel Lounge
 
-**An ultra-lightweight (~48 KB), ad-free Android TV / Google TV launcher with procedural 8-bit pixel-art backgrounds.**
+[![Download APK](https://img.shields.io/github/v/release/lcecconi/pixel-lounge?label=Download%20APK&color=brightgreen)](https://github.com/lcecconi/pixel-lounge/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+**An ultra-lightweight (~104 KB), ad-free Android TV / Google TV launcher with procedural 8-bit pixel-art backgrounds.**
 
 Built with pure Android SDK (zero external dependencies, zero ads, zero telemetry) for instant startup and minimal RAM usage on devices like Chromecast with Google TV.
 
@@ -79,7 +82,20 @@ pixel-lounge/
 
 ## Building & Installing
 
-### Prerequisites
+### Quick Download (Recommended)
+Download the latest ready-to-install signed APK directly from **[GitHub Releases](https://github.com/lcecconi/pixel-lounge/releases/latest)**.
+
+You can install it directly via ADB:
+```bash
+adb install pixel-lounge.apk
+```
+Or download it directly onto your Android TV using the popular TV app **Downloader**.
+
+---
+
+### Building from Source
+
+#### Prerequisites
 * **JDK 17+** (`javac`, `keytool`)
 * **Android SDK** (`platforms;android-34` and `build-tools;34.0.0`) at `ANDROID_HOME` (defaults to `~/.local/share/android-sdk`)
 * **ADB** (`android-tools`) with Wireless Debugging enabled on your Android TV / Google TV
